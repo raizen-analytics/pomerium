@@ -55,9 +55,15 @@ func New(opts config.Options) (*Cache, error) {
 	// No metrics handler because we have one in the control plane.  Add one
 	// if we no longer register with that grpc Server
 	localGRPCServer := grpc.NewServer()
-
+	var maxMsgSize = 32 * 1024 * 1024
 	clientStatsHandler := telemetry.NewGRPCClientStatsHandler(opts.Services)
-	clientDialOptions := clientStatsHandler.DialOptions(grpc.WithInsecure())
+	clientDialOptions := clientStatsHandler.DialOptions(
+		grpc.WithInsecure(),
+		grpc.WithDefaultCallOptions(
+			grpc.MaxCallRecvMsgSize(maxMsgSize),
+			grpc.MaxCallSendMsgSize(maxMsgSize),
+		),
+	)
 
 	localGRPCConnection, err := grpc.DialContext(
 		context.Background(),
