@@ -67,6 +67,7 @@ func NewGRPCClientConn(opts *Options) (*grpc.ClientConn, error) {
 			connAddr = net.JoinHostPort(connAddr, strconv.Itoa(defaultGRPCInsecurePort))
 		}
 	}
+	var maxMsgSize = 32 * 1024 * 1024
 
 	dialOptions := []grpc.DialOption{
 		grpc.WithChainUnaryInterceptor(
@@ -74,7 +75,9 @@ func NewGRPCClientConn(opts *Options) (*grpc.ClientConn, error) {
 			grpcTimeoutInterceptor(opts.RequestTimeout),
 		),
 		grpc.WithStreamInterceptor(requestid.StreamClientInterceptor()),
-		grpc.WithDefaultCallOptions([]grpc.CallOption{grpc.WaitForReady(true)}...),
+		grpc.WithDefaultCallOptions([]grpc.CallOption{grpc.WaitForReady(true),
+			grpc.MaxCallRecvMsgSize(maxMsgSize),
+			grpc.MaxCallSendMsgSize(maxMsgSize)}...),
 	}
 
 	clientStatsHandler := telemetry.NewGRPCClientStatsHandler(opts.ServiceName)
@@ -127,6 +130,7 @@ func NewGRPCClientConn(opts *Options) (*grpc.ClientConn, error) {
 		dialOptions = append(dialOptions, grpc.WithBalancerName(roundrobin.Name), grpc.WithDisableServiceConfig())
 		connAddr = fmt.Sprintf("dns:///%s", connAddr)
 	}
+
 	return grpc.Dial(
 		connAddr,
 		dialOptions...,
