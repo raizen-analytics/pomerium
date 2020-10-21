@@ -170,8 +170,8 @@ func (p *Provider) listGroups(ctx context.Context) ([]*directory.Group, error) {
 
 func (p *Provider) listGroupMembers(ctx context.Context, groupID string) (userIDs []string, err error) {
 	nextURL := p.cfg.graphURL.ResolveReference(&url.URL{
-		// Path: fmt.Sprintf("/v1.0/groups/%s/transitiveMembers", groupID),
-		Path: fmt.Sprintf("/v1.0/groups/%s/members", groupID),
+		Path: fmt.Sprintf("/v1.0/groups/%s/transitiveMembers", groupID),
+		// Path: fmt.Sprintf("/v1.0/groups/%s/members", groupID),
 	}).String()
 
 	for nextURL != "" {
