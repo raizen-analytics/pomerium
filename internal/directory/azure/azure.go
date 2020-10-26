@@ -7,11 +7,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"golang.org/x/oauth2"
 
@@ -214,6 +216,10 @@ func (p *Provider) api(ctx context.Context, method, url string, body io.Reader, 
 	defer res.Body.Close()
 
 	if res.StatusCode/100 != 2 {
+		fmt.Println("Error on querying azure api")
+		bodyBytes, _ := ioutil.ReadAll(res.Body)
+		fmt.Println("Method: ", method)
+		fmt.Println("Response: ", string(bodyBytes))
 		return fmt.Errorf("azure: error querying api: %s", res.Status)
 	}
 
@@ -223,6 +229,13 @@ func (p *Provider) api(ctx context.Context, method, url string, body io.Reader, 
 	}
 
 	return nil
+}
+
+type accessTokenResponse struct {
+	AccessToken      string `json:"access_token"`
+	TokenType        string `json:"token_type,omitempty"`
+	ExpiresInSeconds int    `json:"expires_in,omitempty"`
+	raw              interface{}
 }
 
 func (p *Provider) getToken(ctx context.Context) (*oauth2.Token, error) {
@@ -266,11 +279,17 @@ func (p *Provider) getToken(ctx context.Context) (*oauth2.Token, error) {
 	if res.StatusCode/100 != 2 {
 		return nil, fmt.Errorf("azure: error querying oauth2 token: %s", res.Status)
 	}
-	err = json.NewDecoder(res.Body).Decode(&token)
+	var accessToken accessTokenResponse
+
+	err = json.NewDecoder(res.Body).Decode(&accessToken)
 	if err != nil {
 		return nil, fmt.Errorf("azure: error decoding oauth2 token: %w", err)
 	}
-	p.token = token
+	// Rebuid Token
+	p.token.AccessToken = accessToken.AccessToken
+	p.token.TokenType = accessToken.TokenType
+	p.token.Expiry = time.Now().Add(time.Second * time.Duration(accessToken.ExpiresInSeconds))
+	// p.token = token
 
 	return p.token, nil
 }
