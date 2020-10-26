@@ -286,6 +286,7 @@ func (p *Provider) getToken(ctx context.Context) (*oauth2.Token, error) {
 		return nil, fmt.Errorf("azure: error decoding oauth2 token: %w", err)
 	}
 	// Rebuid Token
+	p.token = new(oauth2.Token)
 	p.token.AccessToken = accessToken.AccessToken
 	p.token.TokenType = accessToken.TokenType
 	p.token.Expiry = time.Now().Add(time.Second * time.Duration(accessToken.ExpiresInSeconds))
