@@ -244,6 +244,7 @@ func (p *Provider) getToken(ctx context.Context) (*oauth2.Token, error) {
 	p.mu.RUnlock()
 
 	if token != nil && token.Valid() {
+		fmt.Println("Token not nil, expiration1: ", token.Expiry)
 		return token, nil
 	}
 
@@ -252,6 +253,7 @@ func (p *Provider) getToken(ctx context.Context) (*oauth2.Token, error) {
 
 	token = p.token
 	if token != nil && token.Valid() {
+		fmt.Println("Token not nil, expiration2: ", token.Expiry)
 		return token, nil
 	}
 
@@ -286,10 +288,12 @@ func (p *Provider) getToken(ctx context.Context) (*oauth2.Token, error) {
 		return nil, fmt.Errorf("azure: error decoding oauth2 token: %w", err)
 	}
 	// Rebuid Token
-	p.token = new(oauth2.Token)
-	p.token.AccessToken = accessToken.AccessToken
-	p.token.TokenType = accessToken.TokenType
-	p.token.Expiry = time.Now().Add(time.Second * time.Duration(accessToken.ExpiresInSeconds))
+	token = new(oauth2.Token)
+	token.AccessToken = accessToken.AccessToken
+	token.TokenType = accessToken.TokenType
+	token.Expiry = time.Now().Add(time.Second * time.Duration(accessToken.ExpiresInSeconds))
+	p.token = token
+	fmt.Println("Token Expiration: ", p.token.Expiry)
 	// p.token = token
 
 	return p.token, nil
